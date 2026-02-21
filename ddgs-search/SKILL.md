@@ -6,7 +6,17 @@ metadata: {"openclaw":{"requires":{"bins":["python3"]}}}
 
 # ddgs-search
 
-Free multi-engine web search + arXiv paper search. Zero API keys, zero cost.
+## Why This Skill?
+
+🆓 **Completely free** — no API keys, no subscriptions, no rate limits, no billing surprises.
+
+🔍 **8 search engines in one** — Google, Bing, DuckDuckGo, Brave, Yandex, Yahoo, Wikipedia, and Mojeek. Switch engines with a single flag. Most search skills only support one.
+
+🎓 **Built-in arXiv research search** — search academic papers directly via arXiv's free API. Returns authors, categories, abstracts, and publication dates. Perfect for researchers, students, and AI/ML practitioners.
+
+🔌 **Drop-in replacement** — outputs web-search-plus compatible JSON, so it works with any skill or tool that expects that format. Zero config migration.
+
+⚡ **Lightweight** — single pip package, no browser automation, no headless Chrome. Searches complete in 1-3 seconds.
 
 ## Install
 
@@ -52,10 +62,10 @@ Output (web-search-plus compatible JSON):
 # Search by topic
 python3 scripts/arxiv_search.py -q "3D gaussian splatting" -m 10
 
-# Field-specific search
+# Field-specific search (title, abstract, category)
 python3 scripts/arxiv_search.py -q "ti:transformer AND cat:cs.CV" -m 5
 
-# Sort by relevance
+# Sort by relevance instead of date
 python3 scripts/arxiv_search.py -q "reinforcement learning" --sort-by relevance
 ```
 

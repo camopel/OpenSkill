@@ -64,7 +64,7 @@ DEFAULT_SLEEP = 300
 DOMAIN_DELAY = 3.0
 BATCH_SIZE = 20
 MAX_RETRIES = 3
-EXPIRY_DAYS = 7
+EXPIRY_DAYS = int(os.environ.get("FINVIZ_EXPIRY_DAYS", "7"))
 
 AD_DOMAINS = {
     "adclick.g.doubleclick.net", "googleads.g.doubleclick.net",
@@ -652,11 +652,12 @@ async def run_daemon(args):
                 log.info("Crawl: done=%d failed=%d skipped_rss=%d",
                          cstats["crawled"], cstats["failed"], cstats["skipped_rss"])
 
-            # 5. Expire old articles (>7 days)
-            exp = expire_old_articles(conn, articles_dir)
-            if exp["db_deleted"]:
-                log.info("Expiry: %d rows deleted, %d files removed",
-                         exp["db_deleted"], exp["files_deleted"])
+            # 5. Expire old articles (configurable, 0=disabled)
+            if EXPIRY_DAYS > 0:
+                exp = expire_old_articles(conn, articles_dir, days=EXPIRY_DAYS)
+                if exp["db_deleted"]:
+                    log.info("Expiry: %d rows deleted, %d files removed (>%dd old)",
+                             exp["db_deleted"], exp["files_deleted"], EXPIRY_DAYS)
 
             elapsed = time.monotonic() - t0
             final = db_stats(conn)
@@ -675,11 +676,16 @@ async def run_daemon(args):
 
 def main():
     parser = argparse.ArgumentParser(description="Finviz crawler v3.2 (Crawl4AI + RSS)")
-    parser.add_argument("--db", default=DEFAULT_DB)
-    parser.add_argument("--articles-dir", default=DEFAULT_ARTICLES_DIR)
-    parser.add_argument("--sleep", type=int, default=DEFAULT_SLEEP)
+    parser.add_argument("--db", default=DEFAULT_DB, help="SQLite database path")
+    parser.add_argument("--articles-dir", default=DEFAULT_ARTICLES_DIR, help="Directory for .md article files")
+    parser.add_argument("--sleep", type=int, default=DEFAULT_SLEEP, help="Seconds between crawl cycles (default: 300)")
+    parser.add_argument("--expiry-days", type=int, default=EXPIRY_DAYS, help="Auto-delete articles older than N days (default: 7, 0=never)")
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
+
+    # Override global expiry from CLI
+    global EXPIRY_DAYS
+    EXPIRY_DAYS = args.expiry_days
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

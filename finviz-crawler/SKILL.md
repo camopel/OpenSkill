@@ -6,7 +6,17 @@ metadata: {"openclaw":{"requires":{"bins":["python3"]}}}
 
 # finviz-crawler
 
-Continuous financial news crawler + query tool. Crawls finviz.com headlines, fetches full article content, stores in SQLite + markdown files.
+## Why This Skill?
+
+📰 **Your own financial news database** — most finance skills just wrap an API for one-shot queries. This skill runs continuously, building a local archive of every headline and article from Finviz. Query your history anytime — no API limits, no missing data.
+
+🆓 **No API key, no subscription** — scrapes finviz.com directly using Crawl4AI + RSS. Bloomberg, Reuters, Yahoo Finance, CNBC articles extracted automatically. Zero cost.
+
+🤖 **Built for AI summarization** — the query tool outputs clean text/JSON optimized for LLM digests. Pair with an OpenClaw cron job for automated morning briefings, evening wrap-ups, or weekly investment summaries.
+
+💾 **Auto-cleanup** — configurable expiry automatically deletes old articles from both the database and disk. Set `--expiry-days 30` to keep a month of history, or `0` to keep everything forever.
+
+🔄 **Daemon architecture** — runs as a background service that starts/stops with OpenClaw. No manual intervention needed after setup. Works with systemd (Linux) and launchd (macOS).
 
 ## Install
 
@@ -14,11 +24,7 @@ Continuous financial news crawler + query tool. Crawls finviz.com headlines, fet
 python3 scripts/install.py
 ```
 
-The install script handles everything across **macOS, Linux, and Windows**:
-- Installs Python packages (`crawl4ai`, `feedparser`)
-- Sets up Playwright browsers (for article extraction)
-- Creates data directories
-- Verifies installation
+Works on **macOS, Linux, and Windows**. Installs Python packages (`crawl4ai`, `feedparser`), sets up Playwright browsers, creates data directories, and verifies everything.
 
 ### Manual install
 ```bash
@@ -30,13 +36,19 @@ crawl4ai-setup  # or: python -m playwright install chromium
 
 ### Run the crawler
 ```bash
-# Uses ~/Downloads/Finviz/ by default
+# Default: ~/Downloads/Finviz/, 7-day expiry
 python3 scripts/finviz_crawler.py
 
-# Custom paths
+# Custom paths and settings
 python3 scripts/finviz_crawler.py --db /path/to/finviz.db --articles-dir /path/to/articles/
 
-# Custom sleep interval between crawl cycles (default: 300s)
+# Keep 30 days of articles
+python3 scripts/finviz_crawler.py --expiry-days 30
+
+# Never auto-delete (keep everything)
+python3 scripts/finviz_crawler.py --expiry-days 0
+
+# Custom crawl interval (default: 300s)
 python3 scripts/finviz_crawler.py --sleep 600
 ```
 
@@ -55,14 +67,15 @@ python3 scripts/finviz_query.py --hours 12 --with-content
 python3 scripts/finviz_query.py --stats
 ```
 
-### Timezone
+### Configuration
 
-Timestamps use your system timezone by default. Override with:
-```bash
-FINVIZ_TZ=America/New_York python3 scripts/finviz_crawler.py
-```
-
-Priority: `FINVIZ_TZ` → `TZ` → `/etc/timezone` → UTC.
+| Setting | CLI flag | Env var | Default |
+|---------|----------|---------|---------|
+| Database path | `--db` | — | `~/Downloads/Finviz/finviz.db` |
+| Articles directory | `--articles-dir` | — | `~/Downloads/Finviz/articles/` |
+| Crawl interval | `--sleep` | — | `300` (5 min) |
+| Article expiry | `--expiry-days` | `FINVIZ_EXPIRY_DAYS` | `7` days |
+| Timezone | — | `FINVIZ_TZ` or `TZ` | System default |
 
 ## Architecture
 
@@ -72,12 +85,13 @@ Priority: `FINVIZ_TZ` → `TZ` → `/etc/timezone` → UTC.
 - Bot/paywall detection rejects garbage content
 - Per-domain rate limiting, user-agent rotation
 - Deduplicates via SHA-256 title hash
+- Auto-expires old articles (configurable)
 - Clean shutdown on SIGTERM/SIGINT
 
 **Query tool** (`finviz_query.py`):
-- Read-only SQLite queries (no HTTP, no dependencies beyond stdlib)
+- Read-only SQLite queries (no HTTP, stdlib only)
 - Filter by time window, export titles or full content
-- Used by cron jobs for automated summarization
+- Designed for LLM summarization pipelines
 
 ## Run as a service (optional)
 
@@ -87,7 +101,7 @@ Priority: `FINVIZ_TZ` → `TZ` → `/etc/timezone` → UTC.
 Description=Finviz News Crawler
 
 [Service]
-ExecStart=python3 /path/to/scripts/finviz_crawler.py
+ExecStart=python3 /path/to/scripts/finviz_crawler.py --expiry-days 30
 Restart=on-failure
 RestartSec=30
 
@@ -106,6 +120,8 @@ WantedBy=default.target
     <array>
         <string>python3</string>
         <string>/path/to/scripts/finviz_crawler.py</string>
+        <string>--expiry-days</string>
+        <string>30</string>
     </array>
     <key>RunAtLoad</key><true/>
     <key>KeepAlive</key><true/>
@@ -125,5 +141,5 @@ WantedBy=default.target
 Pair with an OpenClaw cron job for automated digests:
 ```
 Schedule: 0 6 * * * (6 AM daily)
-Task: Query last 24h → LLM summarize → deliver to Matrix/Telegram
+Task: Query last 24h → LLM summarize → deliver to Matrix/Telegram/Discord
 ```

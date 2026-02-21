@@ -1,7 +1,7 @@
 ---
 name: ddgs-search
 description: Free multi-engine web search via ddgs CLI (DuckDuckGo, Google, Bing, Brave, Yandex, Yahoo, Wikipedia) + arXiv API search. No API keys required. Use when user needs web search, research paper discovery, or when other skills need a search backend. Drop-in replacement for web-search-plus.
-metadata: {"openclaw":{"requires":{"bins":["ddgs","python3"]}}}
+metadata: {"openclaw":{"requires":{"bins":["python3"]}}}
 ---
 
 # ddgs-search
@@ -11,8 +11,13 @@ Free multi-engine web search + arXiv paper search. Zero API keys, zero cost.
 ## Install
 
 ```bash
-bash scripts/install.sh
-# or manually:
+python3 scripts/install.py
+```
+
+Works on **macOS, Linux, and Windows**. Installs the `ddgs` package, verifies CLI access, and runs a quick search test.
+
+### Manual install
+```bash
 pip install ddgs
 ```
 

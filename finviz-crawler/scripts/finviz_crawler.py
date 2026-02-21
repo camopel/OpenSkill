@@ -5,7 +5,7 @@ finviz-crawler v3.2 — Crawl4AI + RSS hybrid financial news crawler.
 Architecture:
   - SQLite stores METADATA ONLY
   - Title stored LOWERCASE in DB (dedup key via sha256 hash)
-  - publish_at = system time in America/Los_Angeles ISO 8601
+  - publish_at = system local time in ISO 8601 (configurable via FINVIZ_TZ or TZ env)
   - article_path NULL until written to disk; real filename after crawl
   - Full article content stored as .md files on disk (underscore_joined filenames)
   - Crawl4AI with Playwright for crawlable sites (Reuters, Yahoo, BBC, etc.)
@@ -35,7 +35,24 @@ from zoneinfo import ZoneInfo
 import feedparser
 from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
 
-TZ_SEATTLE = ZoneInfo("America/Los_Angeles")
+def _detect_local_tz() -> ZoneInfo:
+    """Detect local timezone from env or system. Fallback to UTC."""
+    import os, time
+    for env_key in ("FINVIZ_TZ", "TZ"):
+        tz_name = os.environ.get(env_key)
+        if tz_name:
+            try:
+                return ZoneInfo(tz_name)
+            except Exception:
+                pass
+    try:
+        with open("/etc/timezone") as f:
+            return ZoneInfo(f.read().strip())
+    except Exception:
+        pass
+    return ZoneInfo("UTC")
+
+LOCAL_TZ = _detect_local_tz()
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -133,7 +150,7 @@ def title_hash(title: str) -> str:
 
 def now_seattle() -> str:
     """Current time in America/Los_Angeles as ISO 8601."""
-    return datetime.now(TZ_SEATTLE).isoformat()
+    return datetime.now(LOCAL_TZ).isoformat()
 
 
 def is_bot_blocked(content: str) -> bool:
@@ -290,7 +307,7 @@ def db_stats(conn: sqlite3.Connection) -> dict:
 def expire_old_articles(conn: sqlite3.Connection, articles_dir: str,
                         days: int = EXPIRY_DAYS) -> dict:
     """Delete DB rows and .md files older than `days` days. Returns counts."""
-    cutoff = (datetime.now(TZ_SEATTLE) - timedelta(days=days)).isoformat()
+    cutoff = (datetime.now(LOCAL_TZ) - timedelta(days=days)).isoformat()
     stats = {"db_deleted": 0, "files_deleted": 0, "file_errors": 0}
 
     # Get article_path for files to delete

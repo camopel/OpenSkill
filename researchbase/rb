@@ -1,0 +1,3 @@
+#!/bin/bash
+source ~/Workspace/.venv/bin/activate
+exec python ~/.openclaw/workspace/skills/researchbase/scripts/cli.py "$@"

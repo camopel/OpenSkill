@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+node_modules/
+*.egg-info/
+dist/
+*.db
+*.faiss
+*.npy
+config.json
+.env

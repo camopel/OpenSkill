@@ -1,0 +1,3 @@
+"""
+ResearchBase scripts package.
+"""

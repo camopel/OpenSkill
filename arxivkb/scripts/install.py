@@ -17,7 +17,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 SCRIPT_DIR = Path(__file__).parent
-DEFAULT_DATA_DIR = Path("~/workspace/arxivkb").expanduser()
+DEFAULT_DATA_DIR = Path("~/Downloads/ArXivKB").expanduser()
 
 DEFAULT_CATEGORIES = {
     "cs.AI": "Artificial Intelligence",

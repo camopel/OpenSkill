@@ -59,8 +59,8 @@ LOCAL_TZ = _detect_local_tz()
 # ---------------------------------------------------------------------------
 FINVIZ_NEWS_URL = "https://finviz.com/news.ashx"
 FINVIZ_QUOTE_URL = "https://finviz.com/quote.ashx?t={ticker}&p=d"
-DEFAULT_DB = os.path.expanduser("~/workspace/finviz/finviz.db")
-DEFAULT_ARTICLES_DIR = os.path.expanduser("~/workspace/finviz/articles")
+DEFAULT_DB = os.path.expanduser("~/Downloads/Finviz/finviz.db")
+DEFAULT_ARTICLES_DIR = os.path.expanduser("~/Downloads/Finviz/articles")
 DEFAULT_SLEEP = 300
 DOMAIN_DELAY = 3.0
 BATCH_SIZE = 50
@@ -73,7 +73,7 @@ DEFAULT_TICKERS = ["QQQ", "AMZN", "GOOGL", "TSLA", "META", "NVDA"]
 
 def _load_tickers() -> list[str]:
     """Load tickers from DB tickers table, plus defaults as fallback."""
-    db_path = os.path.expanduser("~/workspace/finviz/finviz.db")
+    db_path = os.path.expanduser("~/Downloads/Finviz/finviz.db")
     if os.path.exists(db_path):
         try:
             conn = sqlite3.connect(db_path)

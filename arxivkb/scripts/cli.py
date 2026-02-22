@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 # Config
 # ---------------------------------------------------------------------------
 
-DEFAULT_DATA_DIR = os.path.expanduser("~/workspace/arxivkb")
+DEFAULT_DATA_DIR = os.path.expanduser("~/Downloads/ArXivKB")
 
 
 def _data_dir(args) -> str:
@@ -364,7 +364,7 @@ def _confirm(msg: str) -> bool:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="akb", description="ArXivKB — arXiv paper manager")
-    parser.add_argument("--data-dir", dest="data_dir", help="Data directory (default: ~/workspace/arxivkb)")
+    parser.add_argument("--data-dir", dest="data_dir", help="Data directory (default: ~/Downloads/ArXivKB)")
 
     sub = parser.add_subparsers(dest="command", help="Command")
 

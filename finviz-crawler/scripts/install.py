@@ -158,7 +158,7 @@ def main():
             run([sys.executable, "-m", "playwright", "install", "chromium"], check=False)
 
     # 4. Create data directories
-    data_dir = os.path.expanduser("~/workspace/finviz")
+    data_dir = os.path.expanduser("~/Downloads/Finviz")
     articles_dir = os.path.join(data_dir, "articles")
     os.makedirs(articles_dir, exist_ok=True)
     print(f"\n  📁 Data directory: {data_dir}")
@@ -166,7 +166,7 @@ def main():
 
     # 5. Create tickers DB with defaults
     print("\nSetting up tickers database...")
-    settings_dir = os.path.expanduser("~/workspace/finviz")
+    settings_dir = os.path.expanduser("~/Downloads/Finviz")
     setup_tickers_db(settings_dir)
 
     # 6. Set up service (platform-specific)

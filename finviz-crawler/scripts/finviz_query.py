@@ -22,8 +22,8 @@ import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-DEFAULT_DB = os.path.expanduser("~/workspace/finviz/finviz.db")
-DEFAULT_ARTICLES_DIR = os.path.expanduser("~/workspace/finviz/articles")
+DEFAULT_DB = os.path.expanduser("~/Downloads/Finviz/finviz.db")
+DEFAULT_ARTICLES_DIR = os.path.expanduser("~/Downloads/Finviz/articles")
 
 
 def get_conn(db_path: str) -> sqlite3.Connection:

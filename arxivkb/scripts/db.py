@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 
-DEFAULT_DATA_DIR = os.path.expanduser("~/workspace/arxivkb")
+DEFAULT_DATA_DIR = os.path.expanduser("~/Downloads/ArXivKB")
 
 
 # ---------------------------------------------------------------------------

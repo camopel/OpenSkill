@@ -22,7 +22,7 @@ def pip_install(packages):
     pip_cmd.extend(packages)
     result = run(pip_cmd, check=False)
     if result.returncode != 0:
-        print(f"  ⚠️  pip install failed, retrying without --user...")
+        print("  ⚠️  pip install failed, retrying without --user...")
         run([sys.executable, "-m", "pip", "install"] + packages)
 
 
@@ -114,7 +114,7 @@ def main():
         sys.exit(1)
     else:
         print("\n✅ ddgs-search ready!")
-        print(f"\nUsage:")
+        print("\nUsage:")
         print(f"  python3 {search_script} -q \"your query\" -m 5")
         print(f"  python3 {arxiv_script} -q \"machine learning\" -m 10")
 

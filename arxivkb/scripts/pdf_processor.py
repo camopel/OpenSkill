@@ -6,7 +6,6 @@ token size and overlap using tiktoken for accurate token counting.
 """
 
 import re
-from pathlib import Path
 from typing import Optional
 
 import pdfplumber

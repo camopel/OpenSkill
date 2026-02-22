@@ -4,7 +4,7 @@ search.py — Semantic search for ArXivKB.
 Embeds query → FAISS search on chunks → group by paper → return ranked papers.
 """
 
-from embed import embed_query, get_dim, DIM
+from embed import embed_query, DIM
 from faiss_index import FaissIndex
 
 

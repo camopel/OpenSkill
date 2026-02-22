@@ -8,7 +8,6 @@ Output format: {"provider": "ddgs", "results": [{"title", "url", "snippet", "pub
 import argparse
 import json
 import subprocess
-import sys
 import tempfile
 import os
 from datetime import datetime

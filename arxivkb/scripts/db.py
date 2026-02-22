@@ -8,7 +8,6 @@ Array columns (categories) stored as JSON text.
 import json
 import os
 import sqlite3
-from pathlib import Path
 from typing import Any, Optional
 
 

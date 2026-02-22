@@ -6,7 +6,6 @@ nomic-embed-text is installed during `akb install`.
 """
 
 import json
-import os
 import time
 import urllib.request
 

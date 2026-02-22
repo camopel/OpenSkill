@@ -9,8 +9,5 @@ node_modules/
 *.npy
 config.json
 .env
-# Ignore generic dist/ but keep pwa-hub frontend builds
 dist/
-!**/pwa-hub/frontend/dist/
-!**/pwa-hub/apps/*/frontend/dist/
 !**/static/dist/

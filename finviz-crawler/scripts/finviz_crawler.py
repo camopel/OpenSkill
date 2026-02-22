@@ -27,7 +27,7 @@ import signal
 import sqlite3
 import time
 import unicodedata
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
@@ -37,7 +37,6 @@ from crawl4ai import AsyncWebCrawler, BrowserConfig, CrawlerRunConfig
 
 def _detect_local_tz() -> ZoneInfo:
     """Detect local timezone from env or system. Fallback to UTC."""
-    import os, time
     for env_key in ("FINVIZ_TZ", "TZ"):
         tz_name = os.environ.get(env_key)
         if tz_name:
@@ -817,7 +816,8 @@ def main():
     args = parser.parse_args()
 
     # Override module-level expiry from CLI
-    expiry_days = args.expiry_days
+    global EXPIRY_DAYS
+    EXPIRY_DAYS = args.expiry_days
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

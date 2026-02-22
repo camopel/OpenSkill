@@ -8,7 +8,6 @@ import json
 import urllib.request
 import urllib.parse
 import xml.etree.ElementTree as ET
-from datetime import datetime
 
 
 ARXIV_API = "https://export.arxiv.org/api/query"

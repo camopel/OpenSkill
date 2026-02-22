@@ -4,13 +4,11 @@ arxiv_crawler.py — arXiv API search and PDF download for ArXivKB.
 Uses the `arxiv` Python package (free API, no key required).
 """
 
-import json
 import os
 import time
 import urllib.request
 import urllib.error
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from typing import Optional
 
 

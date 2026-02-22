@@ -35,7 +35,7 @@ def pip_install(packages):
     pip_cmd.extend(packages)
     result = run(pip_cmd, check=False)
     if result.returncode != 0:
-        print(f"  ⚠️  pip install failed, retrying without --user...")
+        print("  ⚠️  pip install failed, retrying without --user...")
         run([sys.executable, "-m", "pip", "install"] + packages)
 
 
@@ -226,7 +226,7 @@ def main():
         print(f"  python3 {query_script} --list-tickers")
         print(f"  python3 {query_script} --add-ticker NVDA:nvidia,jensen")
         print(f"  python3 {query_script} --remove-ticker MSFT")
-        print(f"\nQuery articles:")
+        print("\nQuery articles:")
         print(f"  python3 {query_script} --hours 24 --titles-only")
 
 

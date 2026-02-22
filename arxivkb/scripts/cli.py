@@ -14,7 +14,6 @@ Usage:
 """
 
 import argparse
-import json
 import os
 import sys
 from pathlib import Path
@@ -51,7 +50,7 @@ def _pdf_dir(args) -> str:
 # topics
 # ---------------------------------------------------------------------------
 
-from arxiv_taxonomy import ALL_CATEGORIES, ARXIV_TAXONOMY, CATEGORY_GROUP
+from arxiv_taxonomy import ALL_CATEGORIES, CATEGORY_GROUP
 
 
 def is_valid_category(code: str) -> bool:
@@ -145,8 +144,8 @@ def cmd_topics(args):
 
         n = len(enabled_set)
         print(f"\n  {n} enabled / {len(all_cats)} total")
-        print(f"  Enable:  akb topics add <code>")
-        print(f"  Disable: akb topics delete <code>")
+        print("  Enable:  akb categories add <code>")
+        print("  Disable: akb categories delete <code>")
 
 
 # ---------------------------------------------------------------------------
@@ -161,7 +160,7 @@ def cmd_ingest(args):
     from db import (init_db, insert_paper, update_paper_status, insert_chunk,
                     update_chunk_faiss_id, get_categories, get_chunks_for_paper,
                     get_unembedded_chunks, pdf_path_for)
-    from arxiv_crawler import crawl_topics, download_pdf
+    from arxiv_crawler import crawl_topics
     from pdf_processor import process_pdf
     from embed import embed_texts, DIM
     from faiss_index import FaissIndex
@@ -297,15 +296,14 @@ def cmd_paper(args):
 
 def cmd_stats(args):
     db_path = _db_path(args)
-    data_dir = _data_dir(args)
 
     from db import init_db, get_stats
     init_db(db_path)
 
     stats = get_stats(db_path)
 
-    print(f"\n  📊 ArXivKB Statistics")
-    print(f"  ─────────────────────")
+    print("\n  📊 ArXivKB Statistics")
+    print("  ─────────────────────")
     print(f"  Papers:       {stats['papers']}")
     print(f"  Chunks:       {stats['chunks']}")
     print(f"  Categories:   {stats['categories']} enabled")

@@ -10,8 +10,6 @@ Works on macOS and Linux. Python 3.10+ required.
 """
 import subprocess
 import sys
-import os
-import json
 import sqlite3
 from pathlib import Path
 from datetime import datetime, timezone
@@ -244,12 +242,12 @@ def main():
         sys.exit(1)
 
     print("\n✅ ArXivKB installed!")
-    print(f"\nManage categories:")
-    print(f"  akb topics list")
-    print(f"  akb topics add cs.AI cs.CV")
-    print(f"  akb topics browse")
-    print(f"\nRun first ingest:")
-    print(f"  akb ingest --days 7")
+    print("\nManage categories:")
+    print("  akb categories list")
+    print("  akb categories add cs.AI cs.CV")
+    print("  akb categories browse")
+    print("\nRun first ingest:")
+    print("  akb ingest --days 7")
 
 
 if __name__ == "__main__":

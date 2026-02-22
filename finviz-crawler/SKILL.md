@@ -36,7 +36,7 @@ crawl4ai-setup  # or: python -m playwright install chromium
 
 ### Run the crawler
 ```bash
-# Default: ~/Downloads/Finviz/, 7-day expiry
+# Default: ~/workspace/finviz/, 7-day expiry
 python3 scripts/finviz_crawler.py
 
 # Custom paths and settings
@@ -63,19 +63,57 @@ python3 scripts/finviz_query.py --hours 12 --titles-only
 # With full article content
 python3 scripts/finviz_query.py --hours 12 --with-content
 
+# List downloaded articles with content status
+python3 scripts/finviz_query.py --list-articles --hours 24
+
 # Database stats
 python3 scripts/finviz_query.py --stats
 ```
+
+### Manage tickers
+```bash
+# List all tracked tickers
+python3 scripts/finviz_query.py --list-tickers
+
+# Add single ticker (auto-generates keywords from symbol)
+python3 scripts/finviz_query.py --add-ticker NVDA
+
+# Add with custom keywords
+python3 scripts/finviz_query.py --add-ticker "NVDA:nvidia,jensen huang"
+
+# Add multiple tickers (batch)
+python3 scripts/finviz_query.py --add-ticker NVDA TSLA AAPL
+python3 scripts/finviz_query.py --add-ticker "NVDA:nvidia,jensen" "TSLA:tesla,elon musk"
+
+# Remove tickers (batch)
+python3 scripts/finviz_query.py --remove-ticker NVDA TSLA
+
+# Custom DB path
+python3 scripts/finviz_query.py --list-tickers --db /path/to/finviz.db
+```
+
+Tickers are stored in the `tickers` table inside `finviz.db` alongside articles. The crawler reads this table each cycle to know which ticker pages to scrape.
 
 ### Configuration
 
 | Setting | CLI flag | Env var | Default |
 |---------|----------|---------|---------|
-| Database path | `--db` | — | `~/Downloads/Finviz/finviz.db` |
-| Articles directory | `--articles-dir` | — | `~/Downloads/Finviz/articles/` |
+| Database path | `--db` | — | `~/workspace/finviz/finviz.db` |
+| Articles directory | `--articles-dir` | — | `~/workspace/finviz/articles/` |
 | Crawl interval | `--sleep` | — | `300` (5 min) |
 | Article expiry | `--expiry-days` | `FINVIZ_EXPIRY_DAYS` | `7` days |
 | Timezone | — | `FINVIZ_TZ` or `TZ` | System default |
+
+## 📱 PrivateApp Dashboard
+
+A companion mobile dashboard is available in [PrivateApp](https://github.com/camopel/PrivateApp) — a personal PWA dashboard for your home server.
+
+The **Finviz** app provides:
+- Headlines browser with time-range filters (12h / 24h / Week)
+- Ticker-specific news filtering
+- LLM-powered summaries on demand
+
+Install PrivateApp, and the Finviz dashboard is built-in — no extra setup needed.
 
 ## Architecture
 
@@ -131,9 +169,13 @@ WantedBy=default.target
 
 ## Data layout
 ```
-~/Downloads/Finviz/
-├── finviz.db          # SQLite: metadata, URLs, timestamps, hashes
-└── articles/          # Full article content as .md files
+~/workspace/finviz/
+├── finviz.db          # SQLite: articles + tickers (single DB)
+├── articles/          # Full article content as .md files
+│   ├── market/        # General market headlines
+│   ├── nvda/          # Per-ticker articles
+│   └── tsla/
+└── summaries/         # LLM summary cache (.json)
 ```
 
 ## Cron integration

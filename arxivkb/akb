@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# akb — ScienceKB CLI wrapper
+# Calls python3 scripts/cli.py, forwarding all arguments.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+exec python3 "$SCRIPT_DIR/scripts/cli.py" "$@"

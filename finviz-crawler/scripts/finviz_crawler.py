@@ -58,13 +58,48 @@ LOCAL_TZ = _detect_local_tz()
 # Constants
 # ---------------------------------------------------------------------------
 FINVIZ_NEWS_URL = "https://finviz.com/news.ashx"
-DEFAULT_DB = os.path.expanduser("~/Downloads/Finviz/finviz.db")
-DEFAULT_ARTICLES_DIR = os.path.expanduser("~/Downloads/Finviz/articles")
+FINVIZ_QUOTE_URL = "https://finviz.com/quote.ashx?t={ticker}&p=d"
+DEFAULT_DB = os.path.expanduser("~/workspace/finviz/finviz.db")
+DEFAULT_ARTICLES_DIR = os.path.expanduser("~/workspace/finviz/articles")
 DEFAULT_SLEEP = 300
 DOMAIN_DELAY = 3.0
-BATCH_SIZE = 20
+BATCH_SIZE = 50
 MAX_RETRIES = 3
-EXPIRY_DAYS = int(os.environ.get("FINVIZ_EXPIRY_DAYS", "7"))
+EXPIRY_DAYS = int(os.environ.get("FINVIZ_EXPIRY_DAYS", "7"))  # overwritten by CLI --expiry-days
+
+# Tickers to scrape news for (loaded from DB or env)
+DEFAULT_TICKERS = ["QQQ", "AMZN", "GOOGL", "TSLA", "META", "NVDA"]
+
+
+def _load_tickers() -> list[str]:
+    """Load tickers from DB tickers table, plus defaults as fallback."""
+    db_path = os.path.expanduser("~/workspace/finviz/finviz.db")
+    if os.path.exists(db_path):
+        try:
+            conn = sqlite3.connect(db_path)
+            rows = conn.execute("SELECT symbol FROM tickers").fetchall()
+            conn.close()
+            if rows:
+                tickers = [r[0] for r in rows]
+                # Add any extras from env
+                env_tickers = os.environ.get("FINVIZ_TICKERS", "")
+                if env_tickers:
+                    for t in env_tickers.split(","):
+                        t = t.strip().upper()
+                        if t and t not in tickers:
+                            tickers.append(t)
+                return tickers
+        except Exception:
+            pass
+    # Fallback to defaults + env
+    tickers = list(DEFAULT_TICKERS)
+    env_tickers = os.environ.get("FINVIZ_TICKERS", "")
+    if env_tickers:
+        for t in env_tickers.split(","):
+            t = t.strip().upper()
+            if t and t not in tickers:
+                tickers.append(t)
+    return tickers
 
 AD_DOMAINS = {
     "adclick.g.doubleclick.net", "googleads.g.doubleclick.net",
@@ -203,6 +238,14 @@ def init_db(db_path: str) -> sqlite3.Connection:
     conn.execute("CREATE INDEX IF NOT EXISTS idx_fetched ON articles(fetched_at)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_publish ON articles(publish_at)")
     conn.execute("CREATE INDEX IF NOT EXISTS idx_domain ON articles(domain)")
+
+    # Add ticker column if missing (for ticker-specific news)
+    try:
+        conn.execute("SELECT ticker FROM articles LIMIT 1")
+    except sqlite3.OperationalError:
+        conn.execute("ALTER TABLE articles ADD COLUMN ticker TEXT DEFAULT NULL")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_ticker ON articles(ticker)")
+        conn.commit()
     conn.commit()
     return conn
 
@@ -213,7 +256,7 @@ def title_exists(conn: sqlite3.Connection, title: str) -> bool:
     ).fetchone() is not None
 
 
-def insert_headline(conn: sqlite3.Connection, item: dict):
+def insert_headline(conn: sqlite3.Connection, item: dict, ticker: str | None = None):
     ts = now_seattle()
     domain = item.get("domain") or extract_domain(item["url"])
     source = item.get("source") or domain
@@ -222,8 +265,8 @@ def insert_headline(conn: sqlite3.Connection, item: dict):
     conn.execute(
         """INSERT OR IGNORE INTO articles
            (title_hash, title, url, domain, source, publish_at, fetched_at,
-            status, retry_count, crawled_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 0, '')""",
+            status, retry_count, crawled_at, ticker)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 0, '', ?)""",
         (
             title_hash(item["title"]),
             title_lower,
@@ -232,12 +275,14 @@ def insert_headline(conn: sqlite3.Connection, item: dict):
             source,
             ts,
             ts,
+            ticker,
         ),
     )
 
 
 def insert_rss_article(conn: sqlite3.Connection, title: str, url: str,
-                        domain: str, summary: str, articles_dir: str) -> bool:
+                        domain: str, summary: str, articles_dir: str,
+                        ticker: str | None = None) -> bool:
     """Insert an RSS article directly as done (with summary content on disk).
     Returns True if new article was inserted."""
     if title_exists(conn, title):
@@ -249,29 +294,32 @@ def insert_rss_article(conn: sqlite3.Connection, title: str, url: str,
 
     # Save summary to disk
     filename = save_article(articles_dir, title_lower, url, domain, ts,
-                            f"*[RSS summary — full article behind paywall]*\n\n{summary}")
+                            f"*[RSS summary — full article behind paywall]*\n\n{summary}",
+                            ticker=ticker)
 
     conn.execute(
         """INSERT OR IGNORE INTO articles
            (title_hash, title, url, domain, source, publish_at, fetched_at,
-            status, retry_count, crawled_at, article_path)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'done', 0, ?, ?)""",
-        (thash, title_lower, url, domain, domain, ts, ts, ts, filename),
+            status, retry_count, crawled_at, article_path, ticker)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'done', 0, ?, ?, ?)""",
+        (thash, title_lower, url, domain, domain, ts, ts, ts, filename, ticker),
     )
     return True
 
 
 def get_pending(conn: sqlite3.Connection, limit: int = BATCH_SIZE) -> list[dict]:
     rows = conn.execute(
-        """SELECT title_hash, title, url, domain, retry_count, fetched_at, publish_at
+        """SELECT title_hash, title, url, domain, retry_count, fetched_at, publish_at, ticker
            FROM articles
            WHERE status = 'pending' AND retry_count < ?
-           ORDER BY fetched_at ASC LIMIT ?""",
+           ORDER BY CASE WHEN ticker IS NOT NULL THEN 0 ELSE 1 END,
+                    fetched_at ASC
+           LIMIT ?""",
         (MAX_RETRIES, limit),
     ).fetchall()
     return [
         {"title_hash": r[0], "title": r[1], "url": r[2], "domain": r[3],
-         "retry_count": r[4], "fetched_at": r[5], "publish_at": r[6]}
+         "retry_count": r[4], "fetched_at": r[5], "publish_at": r[6], "ticker": r[7]}
         for r in rows
     ]
 
@@ -322,6 +370,10 @@ def expire_old_articles(conn: sqlite3.Connection, articles_dir: str,
             if os.path.exists(filepath):
                 os.remove(filepath)
                 stats["files_deleted"] += 1
+                # Clean empty subfolder
+                parent = os.path.dirname(filepath)
+                if parent != articles_dir and os.path.isdir(parent) and not os.listdir(parent):
+                    os.rmdir(parent)
         except Exception as e:
             stats["file_errors"] += 1
             log.warning("  Expiry: failed to delete %s: %s", filename, e)
@@ -338,19 +390,21 @@ def expire_old_articles(conn: sqlite3.Connection, articles_dir: str,
 # Article file storage
 # ---------------------------------------------------------------------------
 def save_article(articles_dir: str, title: str, url: str, domain: str,
-                 publish_at: str, content: str) -> str:
-    """Save article as .md file. Returns filename."""
-    Path(articles_dir).mkdir(parents=True, exist_ok=True)
+                 publish_at: str, content: str, ticker: str | None = None) -> str:
+    """Save article as .md file in ticker subfolder. Returns relative path (ticker/filename)."""
+    subfolder = (ticker or "market").lower()
+    target_dir = os.path.join(articles_dir, subfolder)
+    Path(target_dir).mkdir(parents=True, exist_ok=True)
 
     filename = sanitize_filename(title) + ".md"
-    filepath = os.path.join(articles_dir, filename)
+    filepath = os.path.join(target_dir, filename)
 
     if os.path.exists(filepath):
         with open(filepath, "r", errors="replace") as f:
             first_line = f.readline()
         if title.lower() not in first_line.lower():
             filename = f"{sanitize_filename(title)}_{title_hash(title)[:8]}.md"
-            filepath = os.path.join(articles_dir, filename)
+            filepath = os.path.join(target_dir, filename)
 
     with open(filepath, "w") as f:
         f.write(f"# {title}\n\n")
@@ -361,7 +415,7 @@ def save_article(articles_dir: str, title: str, url: str, domain: str,
         f.write("---\n\n")
         f.write(content)
 
-    return filename
+    return f"{subfolder}/{filename}"
 
 
 # ---------------------------------------------------------------------------
@@ -447,6 +501,69 @@ def parse_finviz_headlines(html: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Ticker-specific headline parsing (from finviz.com/quote.ashx?t=TICKER)
+# ---------------------------------------------------------------------------
+def parse_ticker_headlines(html: str) -> list[dict]:
+    """Parse news headlines from a finviz ticker quote page (news-table)."""
+    items = []
+    seen_titles = set()
+
+    # Pattern matches the news-table structure:
+    # <td>Feb-21-26 10:28PM</td> or <td>06:01PM</td>
+    # <a class="tab-link-news" href="...">title</a>
+    pattern = re.compile(
+        r'<td[^>]*>\s*((?:[A-Z][a-z]{2}-\d{2}-\d{2}\s+)?\d{1,2}:\d{2}(?:AM|PM))\s*</td>'
+        r'.*?<a\s+class="tab-link-news"\s+href="([^"]+)"[^>]*>([^<]+)</a>',
+        re.DOTALL | re.IGNORECASE,
+    )
+    for m in pattern.finditer(html):
+        time_str, url, title = m.group(1).strip(), m.group(2), m.group(3).strip()
+        domain = extract_domain(url)
+        norm = title.lower().strip()
+        if not title or len(title) < 10 or norm in seen_titles or domain in AD_DOMAINS:
+            continue
+        seen_titles.add(norm)
+        items.append({"time": time_str, "title": title, "url": url,
+                       "source": domain, "domain": domain})
+
+    return items
+
+
+async def crawl_ticker_headlines(crawler: AsyncWebCrawler, ticker: str,
+                                  conn: sqlite3.Connection, ua_idx: int) -> int:
+    """Scrape news headlines for a specific ticker from finviz quote page."""
+    url = FINVIZ_QUOTE_URL.format(ticker=ticker)
+    ua = USER_AGENTS[ua_idx % len(USER_AGENTS)]
+    config = CrawlerRunConfig(
+        page_timeout=30000,
+        wait_until="domcontentloaded",
+        delay_before_return_html=2,
+        user_agent=ua,
+        exclude_all_images=True,
+        verbose=False,
+    )
+    try:
+        result = await crawler.arun(url=url, config=config)
+        if not result.success or not result.html:
+            log.warning("Ticker %s fetch failed: %s", ticker, result.error_message or "unknown")
+            return 0
+
+        headlines = parse_ticker_headlines(result.html)
+        new_count = 0
+        for item in headlines:
+            if not title_exists(conn, item["title"]):
+                insert_headline(conn, item, ticker=ticker)
+                new_count += 1
+                log.info("  NEW [%s]: \"%s\" (%s)", ticker, item["title"][:70], item["source"])
+        conn.commit()
+        log.info("Ticker %s: %d new / %d total headlines", ticker, new_count, len(headlines))
+        return new_count
+    except Exception as e:
+        log.error("Ticker %s error: %s", ticker, str(e)[:100])
+        return 0
+
+
+# ---------------------------------------------------------------------------
 # Crawl4AI article fetcher — skips RSS domains
 # ---------------------------------------------------------------------------
 async def crawl_articles(crawler: AsyncWebCrawler, articles: list[dict],
@@ -479,6 +596,7 @@ async def crawl_articles(crawler: AsyncWebCrawler, articles: list[dict],
         retries = article["retry_count"]
         publish = article["publish_at"]
         thash = article["title_hash"]
+        ticker = article.get("ticker")
 
         # Skip RSS domains — they're handled by fetch_rss_articles
         if domain in RSS_DOMAINS:
@@ -526,7 +644,7 @@ async def crawl_articles(crawler: AsyncWebCrawler, articles: list[dict],
                     content = text
 
             if content and not is_bot_blocked(content) and len(content) > 200:
-                filename = save_article(articles_dir, title, url, domain, publish, content)
+                filename = save_article(articles_dir, title, url, domain, publish, content, ticker=ticker)
                 mark_done(conn, thash, filename)
                 stats["crawled"] += 1
                 log.info("  ✓ Done in %.1fs — %d chars → %s", elapsed, len(content), filename)
@@ -638,6 +756,20 @@ async def run_daemon(args):
             if shutdown_event.is_set():
                 break
 
+            # 3b. Crawl ticker-specific headlines
+            tickers = _load_tickers()
+            if tickers:
+                log.info("Scraping ticker news for: %s", ", ".join(tickers))
+                for ticker in tickers:
+                    if shutdown_event.is_set():
+                        break
+                    await crawl_ticker_headlines(crawler, ticker, conn, ua_idx)
+                    ua_idx += 1
+                    await interruptible_sleep(2)  # Be polite between ticker pages
+
+            if shutdown_event.is_set():
+                break
+
             # 4. Crawl pending articles (non-RSS domains only)
             pending = get_pending(conn, limit=BATCH_SIZE)
             stats_before = db_stats(conn)
@@ -653,15 +785,16 @@ async def run_daemon(args):
                          cstats["crawled"], cstats["failed"], cstats["skipped_rss"])
 
             # 5. Expire old articles (configurable, 0=disabled)
-            if EXPIRY_DAYS > 0:
-                exp = expire_old_articles(conn, articles_dir, days=EXPIRY_DAYS)
+            _expiry = getattr(args, 'expiry_days', EXPIRY_DAYS)
+            if _expiry > 0:
+                exp = expire_old_articles(conn, articles_dir, days=_expiry)
                 if exp["db_deleted"]:
                     log.info("Expiry: %d rows deleted, %d files removed (>%dd old)",
-                             exp["db_deleted"], exp["files_deleted"], EXPIRY_DAYS)
+                             exp["db_deleted"], exp["files_deleted"], _expiry)
 
             elapsed = time.monotonic() - t0
             final = db_stats(conn)
-            article_count = len(list(Path(articles_dir).glob("*.md")))
+            article_count = len(list(Path(articles_dir).rglob("*.md")))
             log.info("Cycle %d done in %.1fs | DB: %s | Articles on disk: %d",
                      cycle, elapsed, final, article_count)
 
@@ -683,9 +816,8 @@ def main():
     parser.add_argument("--verbose", "-v", action="store_true")
     args = parser.parse_args()
 
-    # Override global expiry from CLI
-    global EXPIRY_DAYS
-    EXPIRY_DAYS = args.expiry_days
+    # Override module-level expiry from CLI
+    expiry_days = args.expiry_days
 
     logging.basicConfig(
         level=logging.DEBUG if args.verbose else logging.INFO,

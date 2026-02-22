@@ -4,9 +4,13 @@ __pycache__/
 .venv/
 node_modules/
 *.egg-info/
-dist/
 *.db
 *.faiss
 *.npy
 config.json
 .env
+# Ignore generic dist/ but keep pwa-hub frontend builds
+dist/
+!**/pwa-hub/frontend/dist/
+!**/pwa-hub/apps/*/frontend/dist/
+!**/static/dist/

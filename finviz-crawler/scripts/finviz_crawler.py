@@ -807,6 +807,7 @@ async def run_daemon(args):
 
 
 def main():
+    global EXPIRY_DAYS
     parser = argparse.ArgumentParser(description="Finviz crawler v3.2 (Crawl4AI + RSS)")
     parser.add_argument("--db", default=DEFAULT_DB, help="SQLite database path")
     parser.add_argument("--articles-dir", default=DEFAULT_ARTICLES_DIR, help="Directory for .md article files")
@@ -816,7 +817,6 @@ def main():
     args = parser.parse_args()
 
     # Override module-level expiry from CLI
-    global EXPIRY_DAYS
     EXPIRY_DAYS = args.expiry_days
 
     logging.basicConfig(

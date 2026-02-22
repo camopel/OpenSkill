@@ -104,6 +104,20 @@ Tickers are stored in the `tickers` table inside `finviz.db` alongside articles.
 | Article expiry | `--expiry-days` | `FINVIZ_EXPIRY_DAYS` | `7` days |
 | Timezone | — | `FINVIZ_TZ` or `TZ` | System default |
 
+## 💬 Chat Commands (OpenClaw Agent)
+
+When this skill is installed, the agent recognizes `/finviz` as a shortcut:
+
+| Command | Action |
+|---------|--------|
+| `/finviz list` | Show tracked tickers |
+| `/finviz add NVDA, TSLA` | Add tickers to track |
+| `/finviz remove NVDA` | Remove a ticker |
+| `/finviz stats` | Show article/ticker counts |
+| `/finviz help` | Show available commands |
+
+The agent runs these via the `finviz_query.py` CLI internally.
+
 ## 📱 PrivateApp Dashboard
 
 A companion mobile dashboard is available in [PrivateApp](https://github.com/camopel/PrivateApp) — a personal PWA dashboard for your home server.

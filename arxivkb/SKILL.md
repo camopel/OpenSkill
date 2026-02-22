@@ -33,10 +33,10 @@ Works on **macOS and Linux**. Installs Python deps (`faiss-cpu`, `pdfplumber`, `
 
 ```bash
 # 1. Add arXiv categories to track
-akb topics add cs.AI cs.CV cs.LG
+akb categories add cs.AI cs.CV cs.LG
 
 # 2. Browse all available categories
-akb topics browse
+akb categories browse
 
 # 3. Ingest recent papers (last 7 days)
 akb ingest
@@ -45,14 +45,14 @@ akb ingest
 akb stats
 ```
 
-## Topics (arXiv Categories)
+## Categories
 
 ```bash
-akb topics list                    # Show enabled categories
-akb topics browse                  # Browse all 155 arXiv categories
-akb topics browse robotics         # Filter by keyword
-akb topics add cs.AI cs.RO         # Enable categories
-akb topics delete cs.AI            # Disable a category
+akb categories list                    # Show enabled categories
+akb categories browse                  # Browse all 155 arXiv categories
+akb categories browse robotics         # Filter by keyword
+akb categories add cs.AI cs.RO         # Enable categories
+akb categories delete cs.AI            # Disable a category
 ```
 
 Categories are official arXiv codes (e.g. `cs.AI`, `eess.IV`, `q-fin.ST`). The full taxonomy is built in.
@@ -146,7 +146,7 @@ A companion PWA dashboard is available. Provides:
 
 ```
 scripts/
-├── cli.py             # CLI — topics, ingest, paper, stats, expire
+├── cli.py             # CLI — categories, ingest, paper, stats, expire
 ├── db.py              # SQLite schema + CRUD
 ├── arxiv_crawler.py   # arXiv API search + PDF download
 ├── arxiv_taxonomy.py  # Full arXiv category taxonomy (155 categories)

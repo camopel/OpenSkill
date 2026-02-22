@@ -117,6 +117,22 @@ No config file needed. Defaults:
 - **translations**: paper_id, language, abstract, created_at (PK: paper_id+language)
 - **categories**: code, description, group_name, enabled, added_at (155 entries)
 
+## 💬 Chat Commands (OpenClaw Agent)
+
+When this skill is installed, the agent recognizes `/akb` as a shortcut:
+
+| Command | Action |
+|---------|--------|
+| `/akb list` | Show enabled categories |
+| `/akb add cs.AI cs.RO` | Enable categories for crawling |
+| `/akb remove cs.AI` | Disable a category |
+| `/akb browse` | Browse all 155 arXiv categories |
+| `/akb browse robotics` | Filter categories by keyword |
+| `/akb stats` | Show paper/chunk/category counts |
+| `/akb help` | Show available commands |
+
+The agent runs these via the `akb` CLI internally.
+
 ## 📱 PrivateApp Dashboard
 
 A companion PWA dashboard is available. Provides:

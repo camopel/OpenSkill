@@ -109,13 +109,30 @@ def main():
         else:
             print("  ⚠️  arXiv search failed (may be network issue)")
 
+    # 5. Install ddgs-search CLI wrapper
+    print("\n📦 Installing ddgs-search CLI wrapper...")
+    wrapper_src = os.path.join(script_dir, "ddgs-search")
+    if os.path.exists(wrapper_src):
+        user_bin = os.path.expanduser("~/.local/bin")
+        os.makedirs(user_bin, exist_ok=True)
+        wrapper_dst = os.path.join(user_bin, "ddgs-search")
+        import shutil as _shutil
+        _shutil.copy2(wrapper_src, wrapper_dst)
+        os.chmod(wrapper_dst, 0o755)
+        print(f"  ✅ Installed {wrapper_dst}")
+        if user_bin not in os.environ.get("PATH", ""):
+            print(f"  ⚠️  Add to PATH: export PATH=\"{user_bin}:$PATH\"")
+    else:
+        print("  ⚠️  ddgs-search wrapper not found in scripts/, skipping")
+
     if errors:
         print(f"\n❌ Missing: {', '.join(errors)}")
         sys.exit(1)
     else:
         print("\n✅ ddgs-search ready!")
         print("\nUsage:")
-        print(f"  python3 {search_script} -q \"your query\" -m 5")
+        print(f"  ddgs-search \"your query\" 5 google          # CLI wrapper (recommended)")
+        print(f"  python3 {search_script} -q \"your query\" -m 5  # Python JSON output")
         print(f"  python3 {arxiv_script} -q \"machine learning\" -m 10")
 
 

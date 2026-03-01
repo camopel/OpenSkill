@@ -33,12 +33,27 @@ pip install ddgs
 
 ## Web Search
 
+### CLI wrapper (recommended)
+
+The `ddgs-search` wrapper outputs clean JSON to stdout with no interactive prompts or abort issues:
+
+```bash
+# Google (default)
+ddgs-search "your query" 5 google
+
+# Other engines
+ddgs-search "your query" 3 duckduckgo
+ddgs-search "your query" 5 brave
+ddgs-search "your query" 10 yandex
+```
+
+### Python script (web-search-plus compatible JSON)
+
 ```bash
 # Google (default)
 python3 scripts/search.py -q "your query" -m 5
 
 # Other engines
-python3 scripts/search.py -q "your query" -b bing
 python3 scripts/search.py -q "your query" -b duckduckgo
 python3 scripts/search.py -q "your query" -b brave
 python3 scripts/search.py -q "your query" -b yandex
@@ -73,9 +88,10 @@ Returns authors, categories, abstracts — same JSON format.
 
 ## Direct CLI
 
+> ⚠️ The raw `ddgs text` CLI has a pagination bug (`input()` call → `Aborted!` + exit code 1 in non-TTY contexts). Use `ddgs-search` wrapper or `-o file.json` instead.
+
 ```bash
-ddgs text -q "query" -m 5 -b google
-ddgs text -q "query" -m 10 -b bing -o /tmp/results.json
+ddgs text -q "query" -m 5 -b google -o /tmp/results.json
 ```
 
 ## Integration

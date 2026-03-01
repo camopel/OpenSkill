@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# ddgs-search — clean CLI wrapper around ddgs that outputs JSON to stdout.
+# Fixes: ddgs CLI calls input() for pagination → Aborted! + exit 1 in non-TTY.
+#
+# Usage: ddgs-search "query" [max_results] [backend]
+#   ddgs-search "nvidia rtx 5090"              # 5 results, google
+#   ddgs-search "latest AI news" 10 duckduckgo  # 10 results, duckduckgo
+#
+# Backends: auto, google, duckduckgo, brave, yandex, yahoo, wikipedia, mojeek
+
+set -euo pipefail
+
+QUERY="${1:?Usage: ddgs-search \"query\" [max_results] [backend]}"
+MAX="${2:-5}"
+BACKEND="${3:-google}"
+
+TMPFILE=$(mktemp /tmp/ddgs_XXXXXX.json)
+trap 'rm -f "$TMPFILE"' EXIT
+
+ddgs text -q "$QUERY" -m "$MAX" -b "$BACKEND" -o "$TMPFILE" 2>/dev/null
+cat "$TMPFILE"

@@ -49,14 +49,16 @@ def write_registry(data):
 
 
 def notify(target, message):
-    if not target:
-        return
     try:
-        cmd = ["openclaw", "message", "send", "--target", target, "--message", message]
-        if ":" in target and not target.startswith("room:"):
-            parts = target.split(":", 1)
-            cmd = ["openclaw", "message", "send", "--channel", parts[0],
-                   "--target", parts[1], "--message", message]
+        if target:
+            cmd = ["openclaw", "message", "send", "--target", target, "--message", message]
+            if ":" in target and not target.startswith("room:"):
+                parts = target.split(":", 1)
+                cmd = ["openclaw", "message", "send", "--channel", parts[0],
+                       "--target", parts[1], "--message", message]
+        else:
+            # No target — let OpenClaw route to default channel
+            cmd = ["openclaw", "message", "send", "--message", message]
         subprocess.run(cmd, capture_output=True, text=True, timeout=15)
     except Exception as e:
         log(f"  Notify error: {e}")

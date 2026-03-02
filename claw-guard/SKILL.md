@@ -50,12 +50,13 @@ claw-guard register --id "export-gguf" --pid 12345 \
 ### Register a gateway restart
 
 ```bash
-claw-guard register-restart --target "room:!abc:server"
+claw-guard register-restart
 systemctl --user restart openclaw-gateway
 ```
 
 Snapshots current config before restart. Keeps up to 5 rotating backups.
-If gateway fails to start within 30s → tries backups newest-to-oldest → notifies with failure reason.
+If gateway fails to start within 30s → tries backups newest-to-oldest → notifies.
+No `--target` needed — sends to OpenClaw's default channel. Optionally pass `--target` to override.
 
 ### Manage
 

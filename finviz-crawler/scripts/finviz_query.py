@@ -227,7 +227,6 @@ def main():
     parser = argparse.ArgumentParser(description="Query finviz crawler DB")
     parser.add_argument("--db", default=DEFAULT_DB)
     parser.add_argument("--articles-dir", default=DEFAULT_ARTICLES_DIR)
-    parser.add_argument("--db", default=DEFAULT_DB)
     parser.add_argument("--hours", type=float, default=12,
                         help="Articles published in last N hours (default: 12)")
     parser.add_argument("--since", help="Articles since ISO date (overrides --hours)")

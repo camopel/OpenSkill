@@ -86,14 +86,17 @@ claw-guard register --id "<descriptive-id>" --pid <PID> \
 1. User requests a long-running task
 2. Agent spawns sub-agent → gets PID
 3. Agent runs: `claw-guard register --id "task-name" --pid $PID --target "room:..." --command "..."`
-4. If PID dies → claw-guard notifies the target channel → agent confirms result with user
-5. If log goes stale → claw-guard alerts → agent investigates
+4. If PID dies → claw-guard does two things:
+   - Sends a **Matrix message** to the target channel (user sees the alert)
+   - Fires an **`openclaw system event --mode now`** (wakes the agent to investigate)
+5. Agent wakes up, sees the `[claw-guard]` event, investigates (check logs, exit code, dmesg for OOM), and reports findings to the target channel
+6. If log goes stale → same dual notification → agent investigates
 
 **Gateway restart flow:**
 1. Gateway restarts (manual, crash, or auto)
 2. `ExecStartPre` runs `claw-guard register-restart` → config backed up
 3. Gateway starts successfully → claw-guard logs `✅ Gateway restart succeeded` → watch cleared
-4. Gateway fails to start → claw-guard tries config backups → notifies default channel
+4. Gateway fails to start → claw-guard tries config backups → notifies default channel + fires system event
 
 ## CLI Reference
 

@@ -49,6 +49,8 @@ def write_registry(data):
 
 
 def notify(target, message):
+    """Send notification via Matrix AND trigger agent via system event."""
+    # 1. Send Matrix message to the target channel (visible to user)
     try:
         if target:
             cmd = ["openclaw", "message", "send", "--target", target, "--message", message]
@@ -57,11 +59,20 @@ def notify(target, message):
                 cmd = ["openclaw", "message", "send", "--channel", parts[0],
                        "--target", parts[1], "--message", message]
         else:
-            # No target — let OpenClaw route to default channel
             cmd = ["openclaw", "message", "send", "--message", message]
         subprocess.run(cmd, capture_output=True, text=True, timeout=15)
     except Exception as e:
-        log(f"  Notify error: {e}")
+        log(f"  Notify (message) error: {e}")
+
+    # 2. Fire system event to wake the agent so it can investigate
+    try:
+        event_text = f"[claw-guard] {message}"
+        if target:
+            event_text += f"\n[target: {target}]"
+        cmd = ["openclaw", "system", "event", "--text", event_text, "--mode", "now"]
+        subprocess.run(cmd, capture_output=True, text=True, timeout=15)
+    except Exception as e:
+        log(f"  Notify (system event) error: {e}")
 
 
 def pid_alive(pid):

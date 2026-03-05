@@ -205,12 +205,12 @@ def main():
     print(f"  📁 {DEFAULT_DATA_DIR}")
 
     # 3. Pull embedding model via Ollama
-    print("\n🤖 Pulling embedding model (nomic-embed-text)...")
-    result = run(["ollama", "pull", "nomic-embed-text"], check=False)
+    print("\n🤖 Pulling embedding model (qwen3-embedding:0.6b)...")
+    result = run(["ollama", "pull", "qwen3-embedding:0.6b"], check=False)
     if result.returncode == 0:
-        print("  ✅ nomic-embed-text ready")
+        print("  ✅ qwen3-embedding:0.6b ready")
     else:
-        print("  ⚠️  Ollama not found or pull failed — install Ollama and run: ollama pull nomic-embed-text")
+        print("  ⚠️  Ollama not found or pull failed — install Ollama and run: ollama pull qwen3-embedding:0.6b")
 
     # 4. Create DB with categories
     print("\n🗄️  Database...")

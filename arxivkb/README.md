@@ -12,7 +12,7 @@ python3 scripts/install.py
 
 This will:
 - Install Python dependencies (`faiss-cpu`, `pdfplumber`, `arxiv`, `numpy`, `tiktoken`)
-- Pull the default embedding model via Ollama (`nomic-embed-text`)
+- Pull the default embedding model via Ollama (`qwen3-embedding:0.6b`)
 - Create the data directory at `~/workspace/arxivkb/`
 - Set up a SQLite database with default arXiv categories
 - Schedule a daily ingest cron (systemd timer on Linux, launchd on macOS)
@@ -75,11 +75,11 @@ Papers are stored in `~/workspace/arxivkb/`:
 
 ## Embedding Models
 
-By default, ArXivKB uses `nomic-embed-text` via [Ollama](https://ollama.ai). Make sure Ollama is running:
+By default, ArXivKB uses `qwen3-embedding:0.6b` via [Ollama](https://ollama.ai). Make sure Ollama is running:
 
 ```bash
 ollama serve
-ollama pull nomic-embed-text
+ollama pull qwen3-embedding:0.6b
 ```
 
 Alternative models can be configured in `~/workspace/arxivkb/config.json`.

@@ -14,7 +14,7 @@ metadata: {"openclaw":{"requires":{"bins":["python3"]}}}
 
 🤖 **Built for AI summarization** — the query tool outputs clean text/JSON optimized for LLM digests. Pair with an OpenClaw cron job for automated morning briefings, evening wrap-ups, or weekly investment summaries.
 
-💾 **Auto-cleanup** — configurable expiry automatically deletes old articles from both the database and disk. Set `--expiry-days 30` to keep a month of history, or `0` to keep everything forever.
+💾 **Auto-cleanup** — configurable expiry automatically deletes old articles from both the database and disk. Default is 1 day (24h). Set `--expiry-days 30` to keep a month, or `0` to keep everything forever.
 
 🔄 **Daemon architecture** — runs as a background service that starts/stops with OpenClaw. No manual intervention needed after setup. Works with systemd (Linux) and launchd (macOS).
 
@@ -36,7 +36,7 @@ crawl4ai-setup  # or: python -m playwright install chromium
 
 ### Run the crawler
 ```bash
-# Default: ~/workspace/finviz/, 7-day expiry
+# Default: ~/workspace/finviz/, 1-day (24h) expiry
 python3 scripts/finviz_crawler.py
 
 # Custom paths and settings
@@ -101,7 +101,7 @@ Tickers are stored in the `tickers` table inside `finviz.db` alongside articles.
 | Database path | `--db` | — | `~/workspace/finviz/finviz.db` |
 | Articles directory | `--articles-dir` | — | `~/workspace/finviz/articles/` |
 | Crawl interval | `--sleep` | — | `300` (5 min) |
-| Article expiry | `--expiry-days` | `FINVIZ_EXPIRY_DAYS` | `7` days |
+| Article expiry | `--expiry-days` | `FINVIZ_EXPIRY_DAYS` | `1` day (24h) |
 | Timezone | — | `FINVIZ_TZ` or `TZ` | System default |
 
 ## 💬 Chat Commands (OpenClaw Agent)
@@ -153,7 +153,7 @@ Install PrivateApp, and the Finviz dashboard is built-in — no extra setup need
 Description=Finviz News Crawler
 
 [Service]
-ExecStart=python3 /path/to/scripts/finviz_crawler.py --expiry-days 30
+ExecStart=python3 /path/to/scripts/finviz_crawler.py --expiry-days 1
 Restart=on-failure
 RestartSec=30
 
@@ -173,7 +173,7 @@ WantedBy=default.target
         <string>python3</string>
         <string>/path/to/scripts/finviz_crawler.py</string>
         <string>--expiry-days</string>
-        <string>30</string>
+        <string>1</string>
     </array>
     <key>RunAtLoad</key><true/>
     <key>KeepAlive</key><true/>

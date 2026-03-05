@@ -64,7 +64,7 @@ DEFAULT_SLEEP = 300
 DOMAIN_DELAY = 3.0
 BATCH_SIZE = 50
 MAX_RETRIES = 3
-EXPIRY_DAYS = int(os.environ.get("FINVIZ_EXPIRY_DAYS", "7"))  # overwritten by CLI --expiry-days
+EXPIRY_DAYS = int(os.environ.get("FINVIZ_EXPIRY_DAYS", "1"))  # overwritten by CLI --expiry-days
 
 # Tickers to scrape news for (loaded from DB or env)
 DEFAULT_TICKERS = ["QQQ", "AMZN", "GOOGL", "TSLA", "META", "NVDA"]

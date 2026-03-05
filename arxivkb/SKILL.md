@@ -8,7 +8,7 @@ metadata: {"openclaw":{"requires":{"bins":["python3","ollama"]}}}
 
 ## Why This Skill?
 
-🏠 **100% local** — crawls arXiv's free API, embeds with Ollama (nomic-embed-text), indexes in FAISS + SQLite. No cloud cost.
+🏠 **100% local** — crawls arXiv's free API, embeds with Ollama (qwen3-embedding:0.6b), indexes in FAISS + SQLite. No cloud cost.
 
 🔍 **Semantic search on paper content** — FAISS indexes PDF chunks (not just abstracts), so you find papers by what they contain.
 
@@ -22,7 +22,7 @@ metadata: {"openclaw":{"requires":{"bins":["python3","ollama"]}}}
 python3 scripts/install.py
 ```
 
-Works on **macOS and Linux**. Installs Python deps (`faiss-cpu`, `pdfplumber`, `tiktoken`, `arxiv`, `numpy`), pulls `nomic-embed-text` via Ollama, creates data directories and DB.
+Works on **macOS and Linux**. Installs Python deps (`faiss-cpu`, `pdfplumber`, `tiktoken`, `arxiv`, `numpy`), pulls `qwen3-embedding:0.6b` via Ollama, creates data directories and DB.
 
 ### Prerequisites
 
@@ -66,7 +66,7 @@ akb ingest --dry-run          # Preview only
 akb ingest --no-pdf           # Index abstracts only (faster)
 ```
 
-Pipeline: arXiv API → PDF download → text extraction (pdfplumber) → chunking (tiktoken, 500 tokens, 50 overlap) → embedding (Ollama nomic-embed-text) → FAISS + SQLite.
+Pipeline: arXiv API → PDF download → text extraction (pdfplumber) → chunking (tiktoken, 500 tokens, 50 overlap) → embedding (Ollama qwen3-embedding:0.6b) → FAISS + SQLite.
 
 ## Paper Details
 
@@ -96,7 +96,7 @@ No config file needed. Defaults:
 |---------|---------|----------|
 | Data directory | `~/workspace/arxivkb` | `ARXIVKB_DATA_DIR` env or `--data-dir` |
 | Ollama endpoint | `http://localhost:11434` | — (hardcoded) |
-| Embedding model | `nomic-embed-text` (768d) | — (hardcoded) |
+| Embedding model | `qwen3-embedding:0.6b` (1024d) | — (hardcoded) |
 | Chunk size | 500 tokens, 50 overlap | — |
 | Expiry | 90 days | `--days` flag |
 
@@ -151,7 +151,7 @@ scripts/
 ├── arxiv_crawler.py   # arXiv API search + PDF download
 ├── arxiv_taxonomy.py  # Full arXiv category taxonomy (155 categories)
 ├── pdf_processor.py   # PDF text extraction + tiktoken chunking
-├── embed.py           # Ollama nomic-embed-text (768d, normalized)
+├── embed.py           # Ollama qwen3-embedding:0.6b (1024d, normalized)
 ├── faiss_index.py     # FAISS IndexFlatIP manager
 ├── search.py          # Semantic search: query → FAISS → group by paper
 └── install.py         # One-command installer

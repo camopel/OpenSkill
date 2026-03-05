@@ -357,6 +357,127 @@ def _confirm(msg: str) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# fetch (single paper)
+# ---------------------------------------------------------------------------
+
+def cmd_fetch(args):
+    """Fetch, download, chunk, and embed a single paper by arXiv ID."""
+    db_path = _db_path(args)
+    pdf_dir = _pdf_dir(args)
+    data_dir = _data_dir(args)
+
+    from db import (init_db, get_paper, insert_paper, update_paper_status,
+                    insert_chunk, update_chunk_faiss_id, get_chunks_for_paper,
+                    pdf_path_for)
+    from arxiv_crawler import download_pdf
+    from pdf_processor import process_pdf
+    from embed import embed_texts, DIM
+    from faiss_index import FaissIndex
+
+    init_db(db_path)
+
+    arxiv_id = args.arxiv_id.strip()
+
+    # Check if already fully indexed
+    existing = get_paper(db_path, arxiv_id)
+    if existing and existing.get("status") == "indexed":
+        print(f"✅ Paper {arxiv_id} already indexed")
+        print(f"   {existing['title']}")
+        return
+
+    # Fetch metadata from arXiv API
+    import arxiv as arxiv_lib
+    print(f"🔍 Fetching {arxiv_id} from arXiv...")
+    client = arxiv_lib.Client()
+    search = arxiv_lib.Search(id_list=[arxiv_id])
+    results = list(client.results(search))
+    if not results:
+        print(f"❌ Paper {arxiv_id} not found on arXiv")
+        sys.exit(1)
+
+    result = results[0]
+    print(f"  📄 {result.title}")
+    print(f"  Categories: {list(result.categories)}")
+    print(f"  Published: {result.published.strftime('%Y-%m-%d')}")
+
+    # Insert into DB (or get existing ID)
+    paper_id = insert_paper(
+        db_path=db_path,
+        arxiv_id=arxiv_id,
+        title=result.title.replace("\n", " ").strip(),
+        abstract=result.summary.replace("\n", " ").strip(),
+        categories=list(result.categories),
+        published=result.published.strftime("%Y-%m-%d"),
+    )
+
+    # Download PDF
+    if not args.no_pdf:
+        pdf_path = download_pdf(arxiv_id, pdf_dir, result.pdf_url)
+        if pdf_path:
+            update_paper_status(db_path, arxiv_id, "pdf_downloaded")
+        else:
+            print("  ⚠️ PDF download failed, falling back to abstract")
+    else:
+        pdf_path = None
+
+    # Chunk (skip if already chunked)
+    if not get_chunks_for_paper(db_path, paper_id):
+        chunks_data = []
+        pdf = pdf_path_for(arxiv_id, data_dir)
+        if not args.no_pdf and os.path.exists(pdf):
+            try:
+                chunks_data = process_pdf(pdf, max_tokens=500, overlap_tokens=50)
+            except Exception as e:
+                print(f"  ⚠️ PDF processing error: {e}")
+
+        if not chunks_data:
+            abstract = result.summary.replace("\n", " ").strip()
+            if abstract:
+                chunks_data = [{"section": "Abstract", "text": abstract, "chunk_index": 0}]
+
+        if chunks_data:
+            for c in chunks_data:
+                insert_chunk(db_path, paper_id, c.get("section", ""), c.get("chunk_index", 0), c["text"])
+            update_paper_status(db_path, arxiv_id, "chunked")
+            print(f"  📥 {len(chunks_data)} chunks created")
+        else:
+            print("  ⚠️ No content to chunk")
+            return
+    else:
+        chunks_data = get_chunks_for_paper(db_path, paper_id)
+        print(f"  📥 {len(chunks_data)} chunks already exist")
+
+    # Embed
+    from db import get_unembedded_chunks
+    unembedded = [c for c in get_unembedded_chunks(db_path)
+                  if c.get("paper_id") == paper_id or c.get("id") in
+                  {ch["id"] for ch in get_chunks_for_paper(db_path, paper_id)}]
+
+    if not unembedded:
+        # Check via chunks for this paper specifically
+        all_chunks = get_chunks_for_paper(db_path, paper_id)
+        unembedded = [c for c in all_chunks if c.get("faiss_id") is None]
+
+    if unembedded:
+        print(f"  🔄 Embedding {len(unembedded)} chunks...")
+        index = FaissIndex(data_dir, dim=DIM)
+        index.load()
+
+        texts = [c["text"] for c in unembedded]
+        vectors = embed_texts(texts)
+        faiss_ids = index.add(vectors)
+        for chunk, fid in zip(unembedded, faiss_ids):
+            update_chunk_faiss_id(db_path, chunk["id"], fid)
+
+        index.save()
+        update_paper_status(db_path, arxiv_id, "indexed")
+        print(f"  ✅ Indexed (FAISS: {index.size} total vectors)")
+    else:
+        update_paper_status(db_path, arxiv_id, "indexed")
+        print("  ✅ All chunks already embedded")
+
+
+# ---------------------------------------------------------------------------
 # CLI parser
 # ---------------------------------------------------------------------------
 
@@ -390,6 +511,11 @@ def build_parser() -> argparse.ArgumentParser:
     # stats
     sub.add_parser("stats", help="Show database statistics")
 
+    # fetch (single paper by arXiv ID)
+    fp = sub.add_parser("fetch", help="Download and index a single paper by arXiv ID")
+    fp.add_argument("arxiv_id", help="arXiv ID (e.g. 2401.12345)")
+    fp.add_argument("--no-pdf", action="store_true", help="Skip PDF download")
+
     # expire
     exp = sub.add_parser("expire", help="Delete old papers")
     exp.add_argument("--days", type=int, help="Delete papers older than N days")
@@ -409,6 +535,7 @@ def main():
     cmd_map = {
         "topics": cmd_topics,
         "ingest": cmd_ingest,
+        "fetch": cmd_fetch,
         "paper": cmd_paper,
         "stats": cmd_stats,
         "expire": cmd_expire,

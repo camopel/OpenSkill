@@ -1,8 +1,8 @@
 """
-embed.py — Embedding via Ollama (nomic-embed-text, 768 dimensions).
+embed.py — Embedding via Ollama (qwen3-embedding:0.6b, 1024 dimensions).
 
 Uses the Ollama API at localhost:11434. The model is fixed —
-nomic-embed-text is installed during `akb install`.
+qwen3-embedding:0.6b is installed during `akb install`.
 """
 
 import json
@@ -12,8 +12,8 @@ import urllib.request
 import numpy as np
 
 OLLAMA_ENDPOINT = "http://localhost:11434/v1/embeddings"
-MODEL = "nomic-embed-text"
-DIM = 768
+MODEL = "qwen3-embedding:0.6b"
+DIM = 1024
 
 
 def _get_endpoint() -> str:
@@ -66,5 +66,5 @@ def embed_query(query: str) -> np.ndarray:
 
 
 def get_dim() -> int:
-    """Return embedding dimension (fixed: 768 for nomic-embed-text)."""
+    """Return embedding dimension (fixed: 1024 for qwen3-embedding:0.6b)."""
     return DIM

@@ -14,7 +14,7 @@ except ImportError:
 
 
 class FaissIndex:
-    def __init__(self, data_dir: str, dim: int = 768):
+    def __init__(self, data_dir: str, dim: int = 1024):
         self.path = os.path.join(os.path.expanduser(data_dir), "faiss", "arxivkb.faiss")
         self.dim = dim
         self.index = None
